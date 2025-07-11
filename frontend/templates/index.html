@@ -1,0 +1,566 @@
+<!-- NEW Index.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .hero-section {
+        padding: 2rem 0 1.5rem;
+        margin: 0 -15px 1.5rem -15px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .hero-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="%23e3f2fd" stroke-width="0.5" opacity="0.3"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+        opacity: 0.4;
+    }
+    
+    .hero-content {
+        position: relative;
+        z-index: 2;
+    }
+    
+    .main-title {
+        font-weight: 300;
+        letter-spacing: -0.02em;
+        margin-bottom: 1rem;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: fadeInUp 0.8s ease-out 0.2s forwards;
+    }
+    
+    .main-subtitle {
+        opacity: 0;
+        transform: translateY(20px);
+        animation: fadeInUp 0.8s ease-out 0.4s forwards;
+        font-weight: 400;
+        color: #5a6c7d;
+    }
+    
+    .upload-card {
+        border: none;
+        border-radius: 1rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: fadeInUp 0.8s ease-out 0.6s forwards;
+        background: white;
+        height: 100%;
+    }
+    
+    .upload-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    }
+    
+    .requirements-card {
+        border: none;
+        border-radius: 1rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: fadeInUp 0.8s ease-out 0.8s forwards;
+        background: white;
+        height: 100%;
+    }
+    
+    .requirements-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    }
+    
+    .card-title {
+        font-weight: 500;
+        color: #2c3e50;
+        margin-bottom: 1.5rem;
+    }
+    
+    .drop-zone {
+        border: 2px dashed #c8d6e5;
+        border-radius: 0.75rem;
+        padding: 3rem 2rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: #fafbfc;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .drop-zone::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.1), transparent);
+        transition: left 0.5s ease;
+    }
+    
+    .drop-zone:hover {
+        border-color: #3b82f6;
+        background: #f0f8ff;
+        transform: scale(1.01);
+    }
+    
+    .drop-zone:hover::before {
+        left: 100%;
+    }
+    
+    .drop-zone.dragover {
+        border-color: #3b82f6;
+        background: #e3f2fd;
+        transform: scale(1.02);
+    }
+    
+    .drop-zone-content {
+        position: relative;
+        z-index: 2;
+    }
+    
+    .upload-icon {
+        font-size: 3rem;
+        color: #94a3b8;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .drop-zone:hover .upload-icon {
+        color: #3b82f6;
+        transform: scale(1.1);
+    }
+    
+    .upload-text {
+        font-size: 1.1rem;
+        color: #475569;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+    }
+    
+    .upload-subtext {
+        color: #94a3b8;
+        font-size: 0.9rem;
+    }
+    
+    .file-selected {
+        background: #e3f2fd;
+        border-color: #3b82f6;
+        border-style: solid;
+    }
+    
+    .file-info {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #f8f9fa;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .file-details {
+        display: flex;
+        align-items: center;
+    }
+    
+    .file-icon {
+        color: #3b82f6;
+        margin-right: 0.5rem;
+    }
+    
+    .remove-file {
+        background: none;
+        border: none;
+        color: #dc3545;
+        padding: 0.25rem;
+        border-radius: 0.25rem;
+        transition: all 0.3s ease;
+    }
+    
+    .remove-file:hover {
+        background: #dc3545;
+        color: white;
+    }
+    
+    .btn-analyze {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        border: none;
+        border-radius: 0.5rem;
+        padding: 0.75rem 2rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 10px rgba(40, 167, 69, 0.3);
+        color: white;
+    }
+    
+    .btn-analyze:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+        background: linear-gradient(135deg, #20c997 0%, #17a2b8 100%);
+        color: white;
+    }
+    
+    .btn-analyze:disabled {
+        opacity: 0.6;
+        transform: none;
+        cursor: not-allowed;
+    }
+    
+    .progress {
+        height: 0.75rem;
+        border-radius: 0.375rem;
+        background: #e2e8f0;
+        overflow: hidden;
+        margin-top: 1rem;
+    }
+    
+    .progress-bar {
+        background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+        transition: width 0.6s ease;
+        position: relative;
+    }
+    
+    .progress-bar::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        animation: shimmer 2s infinite;
+    }
+    
+    .requirement-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.75rem;
+        padding: 0.5rem 0;
+        transition: all 0.3s ease;
+    }
+    
+    .requirement-item:hover {
+        transform: translateX(5px);
+    }
+    
+    .requirement-label {
+        color: #3b82f6;
+        font-weight: 600;
+        margin-right: 0.75rem;
+        min-width: 120px;
+        font-size: 0.9rem;
+    }
+    
+    .requirement-desc {
+        color: #64748b;
+        font-size: 0.85rem;
+    }
+    
+    .features-section {
+        opacity: 0;
+        transform: translateY(30px);
+        animation: fadeInUp 0.8s ease-out 1s forwards;
+        margin-top: 1rem;
+    }
+    
+    .feature-card {
+        background: white;
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        text-align: center;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    }
+    
+    .feature-icon {
+        font-size: 2.5rem;
+        color: #3b82f6;
+        margin-bottom: 1rem;
+    }
+    
+    .feature-title {
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 0.5rem;
+        font-size: 1.1rem;
+    }
+    
+    .feature-desc {
+        color: #64748b;
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+    
+    .toast {
+        border: none;
+        border-radius: 0.75rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .custom-select-container {
+        position: relative;
+        display: block;
+    }
+
+    .custom-select-container .depot-select {
+        width: 100%;
+        cursor: pointer;
+    }
+
+    .custom-select-container .depot-select::-ms-expand {
+        display: none;
+    }
+
+    .depot-select {
+    padding: 0.75rem 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: white;
+    }
+
+    .depot-select:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+    }
+
+    .depot-selection {
+        margin-bottom: 1rem;
+    }
+
+    .depot-select {
+        padding: 0.75rem 1rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 0.5rem;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        background: white;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+        background-position: right 0.5rem center;
+        background-repeat: no-repeat;
+        background-size: 1.5em 1.5em;
+        padding-right: 2.5rem;
+        max-height: 200px;
+        overflow-y: auto;
+    }
+
+    .depot-select:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+        outline: none;
+    }
+
+    .depot-select option {
+        padding: 0.5rem;
+        background: white;
+        color: #374151;
+        font-size: 0.95rem;
+    }
+
+    .depot-select option:hover {
+        background: #f3f4f6;
+    }
+
+    .depot-selection {
+        margin-bottom: 1.5rem;
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @keyframes shimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+    }
+    
+    @media (max-width: 768px) {
+        .hero-section {
+            padding: 1rem 0 1rem;
+        }
+        
+        .features-section {
+            margin-top: 0.5rem;
+        }
+        
+        .depot-selection {
+            margin-bottom: 1rem;
+        }
+    }
+
+</style>
+
+<div class="hero-section">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10 text-center hero-content">
+                <h1 class="main-title display-4 text-primary">Material Consumption Analyzer</h1>
+                <p class="main-subtitle lead">Analyze material consumption patterns and predict inventory needs</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card upload-card">
+            <div class="card-body p-4">
+                <h5 class="card-title">Select Depot</h5>
+                <div class="mb-4">
+                    <div class="depot-selection">
+                        <div class="custom-select-container">
+                            <select class="depot-select" id="depotSelect">
+                            <option value="">Choose a depot...</option>
+                            <option value="jayanagar">Jayanagar Depot</option>
+                            <option value="hennur">Hennur Depot</option>
+                            <option value="jigani">Jigani Depot</option>
+                            <option value="jammu">Jammu Depot</option>
+                            <option value="rohini-2">Rohini-2 Depot</option>
+                            <option value="mayapuri">Mayapuri Depot</option>
+                            <option value="subhash-place">Subhash Place Depot</option>
+                            <option value="rohini-1">Rohini-1 Depot</option>
+                            <option value="hassanpur">Hassanpur Depot</option>
+                            <option value="wazirpur">Wazirpur Depot</option>
+                            <option value="nand-nagri">Nand Nagri Depot</option>
+                            <option value="srinagar">Srinagar Depot</option>
+                            <option value="mundela-kalan">Mundela Kalan DTC Bus Depot</option>
+                            <option value="kannali">Kannali Depot</option>
+                            <option value="kr-puram">K R Puram Depot</option>
+                            <option value="shanthinagar">Shanthinagar Depot</option>
+                            <option value="kalkaji">Kalkaji Depot</option>
+                            <option value="peenya-2nd">Peenya 2nd Stage Depot</option>
+                            <option value="deepanjalinagar">Deepanjalinagar Depot</option>
+                            <option value="nehru-place">Nehru Place Depot</option>
+                            <option value="bbm">BBM Depot</option>
+                            <option value="naraina">Naraina Depot</option>
+                            <option value="sukhdev-vihar">Sukhdev Vihar Depot</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-analyze d-none" id="proceedBtn">Proceed to Analysis</button>
+            </div>
+        </div>
+    </div>
+</div>
+    
+    <div class="features-section">
+        <div class="row">
+            <div class="col-lg-3 mb-4">
+                <div class="feature-card">
+                    <i class="bi bi-graph-up feature-icon"></i>
+                    <h6 class="feature-title">Consumption Analysis</h6>
+                    <p class="feature-desc">Analyze historical consumption patterns and identify trends in material usage</p>
+                </div>
+            </div>
+            <div class="col-lg-3 mb-4">
+                <div class="feature-card">
+                    <i class="bi bi-box-seam feature-icon"></i>
+                    <h6 class="feature-title">Order Prediction</h6>
+                    <p class="feature-desc">Predict future material requirements based on historical data and trends</p>
+                </div>
+            </div>
+            <div class="col-lg-3 mb-4">
+                <div class="feature-card">
+                    <i class="bi bi-file-text feature-icon"></i>
+                    <h6 class="feature-title">Accurate Reports</h6>
+                    <p class="feature-desc">Generate comprehensive reports with insights and recommendations</p>
+                </div>
+            </div>
+            <div class="col-lg-3 mb-4">
+                <div class="feature-card">
+                    <i class="bi bi-cart feature-icon"></i>
+                    <h6 class="feature-title">Easier Ordering</h6>
+                    <p class="feature-desc">Streamlined component ordering process based on consumption analysis</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="toast-container position-fixed top-0 end-0 p-3">
+    <div id="alertToast" class="toast" role="alert">
+        <div class="toast-header">
+            <strong class="me-auto">Material Analyzer</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body" id="toastMessage"></div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const depotSelect = document.getElementById('depotSelect');
+    const proceedBtn = document.getElementById('proceedBtn');
+    
+    depotSelect.addEventListener('change', function() {
+        if (this.value) {
+            proceedBtn.classList.remove('d-none');
+        } else {
+            proceedBtn.classList.add('d-none');
+        }
+    });
+    
+    proceedBtn.addEventListener('click', function() {
+        const selectedDepot = depotSelect.value;
+        
+        if (selectedDepot === 'hassanpur') {
+            // Set session flag for Hassanpur depot
+            fetch('/set_depot', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({depot: selectedDepot})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = '/dashboard';
+                } else {
+                    showToast('Error setting depot. Please try again.', 'error');
+                }
+            })
+            .catch(error => {
+                showToast('Error connecting to server. Please try again.', 'error');
+            });
+        } else {
+            showToast('No data available for the selected depot', 'error');
+        }
+    });
+    
+    function showToast(message, type) {
+        const toast = document.getElementById('alertToast');
+        const toastMessage = document.getElementById('toastMessage');
+        toastMessage.textContent = message;
+        
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+    }
+});
+</script>
+
+{% endblock %}

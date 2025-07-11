@@ -1,0 +1,141 @@
+:root {
+    --tata-blue: 
+#1e3a8a;
+    --light-gray: 
+#f8fafc;
+    --success-green: 
+#059669;
+    --warning-orange: 
+#d97706;
+    --error-red: 
+#dc2626;
+}
+
+body {
+    background-color: var(--light-gray);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.navbar-brand {
+    font-size: 1.5rem;
+}
+
+.bg-primary {
+    background-color: var(--tata-blue) !important;
+}
+
+.text-primary {
+    color: var(--tata-blue) !important;
+}
+
+.btn-primary {
+    background-color: var(--tata-blue);
+    border-color: var(--tata-blue);
+}
+
+.btn-primary:hover {
+    background-color: 
+#1e40af;
+    border-color: 
+#1e40af;
+}
+
+.drop-zone {
+    border: 2px dashed 
+#cbd5e1;
+    border-radius: 8px;
+    padding: 2rem;
+    text-align: center;
+    background-color: 
+#f8fafc;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.drop-zone:hover,
+.drop-zone.dragover {
+    background-color: 
+#e0f2fe;
+    border-color: var(--tata-blue);
+}
+
+.drop-zone-content {
+    pointer-events: none;
+}
+
+.card {
+    border: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+.card-header {
+    background-color: 
+#f1f5f9;
+    border-bottom: 1px solid 
+#e2e8f0;
+    font-weight: 600;
+}
+
+.table-responsive {
+    border-radius: 4px;
+    border: 1px solid 
+#e2e8f0;
+}
+
+.table th {
+    background-color: 
+#f8fafc;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.prediction-card {
+    background: linear-gradient(135deg, 
+#667eea 0%, 
+#764ba2 100%);
+    color: white;
+    border-radius: 10px;
+}
+
+.status-sufficient {
+    background-color: var(--success-green);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: 600;
+}
+
+.status-insufficient {
+    background-color: var(--error-red);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: 600;
+}
+
+.status-excess {
+    background-color: var(--warning-orange);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: 600;
+}
+
+.spinner-border {
+    z-index: 9999;
+}
+
+.toast {
+    min-width: 300px;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 0 1rem;
+    }
+
+    .display-4 {
+        font-size: 2rem;
+    }
+}

@@ -1,0 +1,334 @@
+{% extends "base.html" %}
+
+{% block title %}Cart - Material Consumption Analyzer{% endblock %}
+
+{% block content %}
+<div class="card-body">
+    <div id="cartContainer">
+        <div class="text-center py-5">
+            <i class="bi bi-spinner-border text-primary" style="font-size: 2rem;"></i>
+            <h5 class="mt-3 text-muted">Loading cart...</h5>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    function loadCart() {
+        fetch('/get_cart')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    displayCart(data.cart);
+                } else {
+                    document.getElementById('cartContainer').innerHTML = `
+                        <div class="alert alert-danger">
+                            <strong>Error:</strong> ${data.error}
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Cart loading error:', error);
+                document.getElementById('cartContainer').innerHTML = `
+                    <div class="alert alert-danger">
+                        <strong>Network Error:</strong> Please try again
+                    </div>
+                `;
+            });
+    }
+
+    function displayCart(cart) {
+        const cartContainer = document.getElementById('cartContainer');
+        
+        if (Object.keys(cart).length === 0) {
+            cartContainer.innerHTML = `
+                <div class="text-center py-5">
+                    <i class="bi bi-cart-x" style="font-size: 3rem; color: #6c757d;"></i>
+                    <h5 class="mt-3 text-muted">Your cart is empty</h5>
+                    <p class="text-muted">Add some materials to get started</p>
+                    <a href="/search" class="btn btn-primary">Go to Search</a>
+                </div>
+            `;
+            return;
+        }
+
+        let totalValue = 0;
+        let cartHTML = `
+            <div class="row">
+                <div class="col-md-8">
+                    <h4 class="mb-3">Cart Items</h4>
+                    <div class="table-container">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>S.No.</th>
+                                    <th>Material</th>
+                                    <th>Description</th>
+                                    <th>Unit Price</th>
+                                    <th>Quantity</th>
+                                    <th>Total</th>
+                                    <th width="40"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+        `;
+
+        let serialNo = 1;
+        Object.entries(cart).forEach(([materialNumber, item]) => {
+            totalValue += item.total;
+            cartHTML += `
+                <tr>
+                    <td>${serialNo++}</td>
+                    <td class="fw-bold">${materialNumber}</td>
+                    <td>${item.description}</td>
+                    <td>₹${item.unit_price.toFixed(2)}</td>
+                    <td>
+                        <input type="number" class="form-control text-center" value="${item.quantity}" min="1" 
+                               onchange="updateQuantity('${materialNumber}', this.value)" style="width: 80px; margin: 0 auto;">
+                    </td>
+                    <td class="fw-bold">₹${item.total.toFixed(2)}</td>
+                    <td>
+                        <button class="btn-remove" onclick="removeMaterial('${materialNumber}')" title="Remove from cart">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+
+        cartHTML += `
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="mb-3">Order Summary</h5>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Total Items:</span>
+                                <span>${Object.keys(cart).length}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-3">
+                                <span class="fw-bold">Total Value:</span>
+                                <span class="fw-bold">₹${totalValue.toFixed(2)}</span>
+                            </div>
+                            <a href="/vendors" class="btn btn-primary w-100 mb-2">Proceed to Order</a>
+                            <a href="/search" class="btn btn-outline-secondary w-100">Continue choosing materials</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        cartContainer.innerHTML = cartHTML;
+    }
+
+    function updateQuantity(materialNumber, newQuantity) {
+        fetch('/update_cart', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                material_number: materialNumber,
+                quantity: parseInt(newQuantity)
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                loadCart();
+            } else {
+                alert('Error updating quantity: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error updating quantity:', error);
+            alert('Network error. Please try again.');
+        });
+    }
+
+    function removeMaterial(materialNumber) {
+        fetch('/update_cart', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                material_number: materialNumber,
+                quantity: 0
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                loadCart();
+            } else {
+                alert('Error removing material: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error removing material:', error);
+            alert('Network error. Please try again.');
+        });
+    }
+
+    window.updateQuantity = updateQuantity;
+    window.removeMaterial = removeMaterial;
+    loadCart();
+});
+</script>
+
+<style>
+    .card-body {
+        opacity: 0;
+        transform: translateY(30px);
+        animation: fadeInUp 0.8s ease-out 0.2s forwards;
+    }
+
+    .card {
+        border: none;
+        border-radius: 1rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    }
+
+    .card-header {
+        border-radius: 1rem 1rem 0 0 !important;
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+        color: white;
+        font-weight: 500;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        border: none;
+        border-radius: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 10px rgba(59, 130, 246, 0.3);
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+    }
+
+    .btn-outline-secondary {
+        border: 2px solid #e2e8f0;
+        color: #64748b;
+        border-radius: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .btn-outline-secondary:hover {
+        background: #f8f9fa;
+        border-color: #3b82f6;
+        color: #3b82f6;
+        transform: translateY(-1px);
+    }
+
+    .table-container {
+        max-height: 400px;
+        overflow-y: auto;
+        border-radius: 0.75rem;
+        border: 1px solid #e2e8f0;
+    }
+
+    .table {
+        margin-bottom: 0;
+    }
+
+    .table thead th {
+        position: sticky;
+        top: 0;
+        background: #f8f9fa;
+        z-index: 10;
+        border-bottom: 2px solid #e2e8f0;
+        font-weight: 600;
+        color: #2c3e50;
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: rgba(59, 130, 246, 0.05);
+        transition: all 0.3s ease;
+    }
+
+    .table td {
+        vertical-align: middle;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .form-control {
+        border: 2px solid #e2e8f0;
+        border-radius: 0.375rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 0.1rem rgba(59, 130, 246, 0.25);
+    }
+
+    .btn-remove {
+        background: transparent;
+        border: none;
+        border-radius: 4px;
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: transparent;
+        font-size: 16px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-remove:hover {
+        background: #ef4444;
+        color: white;
+        transform: scale(1.05);
+    }
+
+    .btn-remove:active {
+        transform: scale(0.95);
+    }
+
+    .alert {
+        border: none;
+        border-radius: 0.75rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    .text-primary {
+        color: #3b82f6 !important;
+    }
+
+    .fw-bold {
+        font-weight: 600 !important;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+{% endblock %}

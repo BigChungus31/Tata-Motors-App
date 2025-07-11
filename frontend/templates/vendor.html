@@ -1,0 +1,614 @@
+{% extends "base.html" %}
+
+{% block title %}Vendors - Material Consumption Analyzer{% endblock %}
+
+{% block content %}
+<div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="mb-0">Vendors/Materials</h4>
+        <button type="button" class="btn btn-primary" id="confirmAllBtn" style="display: none;">
+            Confirm All Orders
+        </button>
+    </div>
+
+    <div id="vendorContainer">
+        <div class="text-center py-5">
+            <i class="bi bi-spinner-border text-primary" style="font-size: 2rem;"></i>
+            <h5 class="mt-3 text-muted">Loading vendors...</h5>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="confirmOrderModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Order</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="orderDetails"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="finalConfirmBtn">Confirm Order</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center py-5">
+                <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <h4 class="text-primary">Order Confirmed</h4>
+                <p class="text-muted">Redirecting to home page...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let currentVendor = null;
+    let vendorMaterials = {};
+    let allVendors = [];
+
+    function loadVendors() {
+        fetch('/get_vendors')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    allVendors = data.vendors;
+                    displayVendors(data.vendors);
+                } else {
+                    document.getElementById('vendorContainer').innerHTML = `
+                        <div class="alert alert-danger">
+                            <strong>Error:</strong> ${data.error}
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Vendor loading error:', error);
+                document.getElementById('vendorContainer').innerHTML = `
+                    <div class="alert alert-danger">
+                        <strong>Network Error:</strong> Please try again
+                    </div>
+                `;
+            });
+    }
+
+    function displayVendors(vendors) {
+        const vendorContainer = document.getElementById('vendorContainer');
+        
+        if (!vendors || vendors.length === 0) {
+            vendorContainer.innerHTML = `
+                <div class="text-center py-5">
+                    <i class="bi bi-building" style="font-size: 3rem; color: #6c757d;"></i>
+                    <h5 class="mt-3 text-muted">No vendors available</h5>
+                    <p class="text-muted">No vendors found for cart items</p>
+                    <a href="/cart" class="btn btn-primary">Back to Cart</a>
+                </div>
+            `;
+            return;
+        }
+
+        document.getElementById('confirmAllBtn').style.display = 'inline-block';
+
+        let vendorHTML = '<div class="vendor-scroll-container">';
+
+        vendors.forEach(vendor => {
+            vendorHTML += `
+                <div class="vendor-card">
+                    <div class="vendor-header">
+                        <div class="vendor-info">
+                            <h6 class="vendor-name">${vendor.name}</h6>
+                            <div class="vendor-contact">
+                                <span class="contact-item">${vendor.contact}</span>
+                                <span class="contact-item">${vendor.phone}</span>
+                            </div>
+                        </div>
+                        <div class="vendor-summary">
+                            <div class="total-value">₹${(vendor.total_value || 0).toFixed(2)}</div>
+                            <div class="material-count">${vendor.materials.length} items</div>
+                        </div>
+                    </div>
+                    
+                    <div class="materials-list">
+                        ${vendor.materials.map(material => `
+                            <div class="material-item" data-vendor="${vendor.name}" data-material="${material.material_number}">
+                                <div class="material-info">
+                                    <div class="material-number">${material.material_number}</div>
+                                    <div class="material-desc">${material.description}</div>
+                                </div>
+                                <div class="material-details">
+                                    <div class="quantity">Qty: ${material.quantity}</div>
+                                    <div class="price">₹${material.unit_price.toFixed(2)}</div>
+                                    <div class="total">₹${(material.total || 0).toFixed(2)}</div>
+                                </div>
+                                <button class="remove-btn" onclick="removeMaterial('${vendor.name}', '${material.material_number}')">
+                                    <i class="bi bi-x"></i>
+                                </button>
+                            </div>
+                        `).join('')}
+                    </div>
+                    
+                    <div class="vendor-actions">
+                        <button class="btn btn-sm btn-outline-primary" onclick="selectVendor('${vendor.name}')">
+                            View Details
+                        </button>
+                        <button class="btn btn-sm btn-primary" onclick="confirmSingleOrder('${vendor.name}')">
+                            Confirm Order
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+
+        vendorHTML += '</div>';
+        vendorContainer.innerHTML = vendorHTML;
+        
+        vendors.forEach(vendor => {
+            vendorMaterials[vendor.name] = vendor.materials;
+        });
+    }
+
+    function removeMaterial(vendorName, materialNumber) {
+        if (!vendorMaterials[vendorName]) return;
+        
+        vendorMaterials[vendorName] = vendorMaterials[vendorName].filter(
+            material => material.material_number !== materialNumber
+        );
+        
+        for (let i = 0; i < allVendors.length; i++) {
+            if (allVendors[i].name === vendorName) {
+                allVendors[i].materials = vendorMaterials[vendorName];
+                allVendors[i].total_value = vendorMaterials[vendorName].reduce((sum, mat) => sum + (mat.total || 0), 0);
+                break;
+            }
+        }
+        
+        allVendors = allVendors.filter(vendor => vendor.materials.length > 0);
+        displayVendors(allVendors);
+    }
+
+    function selectVendor(vendorName) {
+        currentVendor = vendorName;
+        const materials = vendorMaterials[vendorName];
+        
+        let orderHTML = `
+            <div class="vendor-order-details">
+                <h4>Order Details for ${vendorName}</h4>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Material</th>
+                                <th>Description</th>
+                                <th>Quantity</th>
+                                <th>Unit Price</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+        `;
+
+        let totalValue = 0;
+        materials.forEach(material => {
+            totalValue += (material.total || 0);
+            orderHTML += `
+                <tr>
+                    <td class="fw-bold">${material.material_number}</td>
+                    <td>${material.description}</td>
+                    <td>${material.quantity}</td>
+                    <td>₹${material.unit_price.toFixed(2)}</td>
+                    <td class="fw-bold">₹${(material.total || 0).toFixed(2)}</td>
+                </tr>
+            `;
+        });
+
+        orderHTML += `
+                        </tbody>
+                    </table>
+                </div>
+                <div class="order-summary">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Vendor Contact Information:</h6>
+                            <p class="mb-1"><strong>Email:</strong> ${getCurrentVendorContact(vendorName)}</p>
+                            <p class="mb-1"><strong>Phone:</strong> ${getCurrentVendorPhone(vendorName)}</p>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <h5>Total Order Value: ₹${totalValue.toFixed(2)}</h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.getElementById('orderDetails').innerHTML = orderHTML;
+        
+        const modal = new bootstrap.Modal(document.getElementById('confirmOrderModal'));
+        modal.show();
+    }
+
+    function confirmSingleOrder(vendorName) {
+        const orderData = {
+            vendor: vendorName,
+            materials: vendorMaterials[vendorName]
+        };
+
+        fetch('/confirm_order', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(orderData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Order confirmed successfully!');
+                allVendors = allVendors.filter(vendor => vendor.name !== vendorName);
+                displayVendors(allVendors);
+            } else {
+                alert('Error confirming order: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error confirming order:', error);
+            alert('Network error. Please try again.');
+        });
+    }
+
+    function confirmAllOrders() {
+        const allOrdersData = allVendors.map(vendor => ({
+            vendor: vendor.name,
+            materials: vendorMaterials[vendor.name]
+        }));
+
+        const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+        loadingModal.show();
+
+        Promise.all(allOrdersData.map(orderData => 
+            fetch('/confirm_order', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(orderData)
+            }).then(response => response.json())
+        ))
+        .then(results => {
+            const successCount = results.filter(result => result.success).length;
+            const errorCount = results.length - successCount;
+            
+            if (errorCount === 0) {
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 2000);
+            } else {
+                loadingModal.hide();
+                alert(`${successCount} orders confirmed, ${errorCount} failed. Please check individual orders.`);
+                loadVendors();
+            }
+        })
+        .catch(error => {
+            console.error('Error confirming orders:', error);
+            loadingModal.hide();
+            alert('Network error. Please try again.');
+        });
+    }
+
+    function getCurrentVendorContact(vendorName) {
+        const vendorContacts = {
+            'Tata AutoComp Systems': 'orders@tataautocomp.com',
+            'Motherson Sumi Systems': 'procurement@motherson.com',
+            'Bharat Forge': 'sales@bharatforge.com',
+            'ZF India': 'india@zf.com',
+            'Bosch India': 'orders@bosch.in',
+            'Apollo Tyres': 'orders@apollotyres.com',
+            'Asahi India Glass': 'orders@aisglass.com',
+            'NTN Bearing India': 'sales@ntnindia.com',
+            'Sundaram Clayton': 'orders@sundaramclayton.com',
+            'Tata Steel': 'automotive@tatasteel.com'
+        };
+        return vendorContacts[vendorName] || 'Not available';
+    }
+
+    function getCurrentVendorPhone(vendorName) {
+        const vendorPhones = {
+            'Tata AutoComp Systems': '+91-20-6604-7000',
+            'Motherson Sumi Systems': '+91-124-471-1000',
+            'Bharat Forge': '+91-20-6704-2000',
+            'ZF India': '+91-80-4077-4000',
+            'Bosch India': '+91-80-6749-2222',
+            'Apollo Tyres': '+91-44-2839-3000',
+            'Asahi India Glass': '+91-11-2682-9999',
+            'NTN Bearing India': '+91-44-2815-1234',
+            'Sundaram Clayton': '+91-44-2220-1000',
+            'Tata Steel': '+91-33-6612-7000'
+        };
+        return vendorPhones[vendorName] || 'Not available';
+    }
+
+    document.getElementById('finalConfirmBtn').addEventListener('click', function() {
+        if (!currentVendor) return;
+
+        const orderData = {
+            vendor: currentVendor,
+            materials: vendorMaterials[currentVendor]
+        };
+
+        fetch('/confirm_order', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(orderData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Order confirmed successfully!');
+                const modal = bootstrap.Modal.getInstance(document.getElementById('confirmOrderModal'));
+                modal.hide();
+                window.location.href = '/cart';
+            } else {
+                alert('Error confirming order: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error confirming order:', error);
+            alert('Network error. Please try again.');
+        });
+    });
+
+    document.getElementById('confirmAllBtn').addEventListener('click', confirmAllOrders);
+
+    window.selectVendor = selectVendor;
+    window.confirmSingleOrder = confirmSingleOrder;
+    window.removeMaterial = removeMaterial;
+    loadVendors();
+});
+</script>
+
+<style>
+    .vendor-scroll-container {
+        display: flex;
+        gap: 1.5rem;
+        overflow-x: auto;
+        padding: 1rem 0;
+        scroll-behavior: smooth;
+    }
+
+    .vendor-scroll-container::-webkit-scrollbar {
+        height: 8px;
+    }
+
+    .vendor-scroll-container::-webkit-scrollbar-track {
+        background: #f8f9fa;
+        border-radius: 4px;
+    }
+
+    .vendor-scroll-container::-webkit-scrollbar-thumb {
+        background: #3b82f6;
+        border-radius: 4px;
+    }
+
+    .vendor-card {
+        min-width: 400px;
+        max-width: 450px;
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+    }
+
+    .vendor-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .vendor-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .vendor-name {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #2c3e50;
+        margin: 0 0 0.5rem 0;
+    }
+
+    .vendor-contact {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .contact-item {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+
+    .vendor-summary {
+        text-align: right;
+    }
+
+    .total-value {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #2c3e50;
+    }
+
+    .material-count {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+
+    .materials-list {
+        max-height: 400px;
+        overflow-y: auto;
+        margin-bottom: 1rem;
+    }
+
+    .material-item {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        background: #f8f9fa;
+        border-radius: 8px;
+        position: relative;
+        transition: all 0.2s ease;
+    }
+
+    .material-item:hover {
+        background: #e9ecef;
+    }
+
+    .material-info {
+        flex: 1;
+        min-width: 0;
+        margin-right: 1rem;
+    }
+
+    .material-number {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 0.25rem;
+    }
+
+    .material-desc {
+        font-size: 0.8rem;
+        color: #6c757d;
+        line-height: 1.2;
+    }
+
+    .material-details {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        align-items: flex-end;
+        font-size: 0.8rem;
+        flex-shrink: 0;
+        min-width: 100px;
+    }
+
+    .quantity {
+        color: #6c757d;
+    }
+
+    .price {
+        color: #2c3e50;
+        font-weight: 500;
+    }
+
+    .total {
+        color: #3b82f6;
+        font-weight: 600;
+    }
+
+    .remove-btn {
+        background: none;
+        border: none;
+        color: #dc3545;
+        font-size: 1.2rem;
+        cursor: pointer;
+        padding: 0.25rem;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+        margin-left: 0.5rem;
+    }
+
+    .remove-btn:hover {
+        background: #dc3545;
+        color: white;
+    }
+
+    .vendor-actions {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: flex-end;
+        padding-top: 1rem;
+        border-top: 1px solid #e9ecef;
+    }
+
+    .btn-sm {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+        border-radius: 6px;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        border: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+        transform: translateY(-1px);
+    }
+
+    .btn-outline-primary {
+        border-color: #3b82f6;
+        color: #3b82f6;
+    }
+
+    .btn-outline-primary:hover {
+        background: #3b82f6;
+        border-color: #3b82f6;
+        color: white;
+    }
+
+    .vendor-order-details {
+        padding: 1rem;
+    }
+
+    .order-summary {
+        margin-top: 2rem;
+        padding: 1.5rem;
+        background: #f8f9fa;
+        border-radius: 0.75rem;
+    }
+
+    .table {
+        border-radius: 0.75rem;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: rgba(59, 130, 246, 0.05);
+    }
+
+    .fw-bold {
+        font-weight: 600 !important;
+    }
+
+    @media (max-width: 768px) {
+        .vendor-card {
+            min-width: 300px;
+        }
+        
+        .material-details {
+            min-width: 80px;
+        }
+    }
+</style>
+{% endblock %}

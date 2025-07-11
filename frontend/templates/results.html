@@ -1,0 +1,660 @@
+<!-- Results.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .hero-section {
+        padding: 2rem 0 2.5rem;
+        background: white;
+        color: #2c3e50;
+        text-align: center;
+    }
+    
+    .hero-content {
+        opacity: 0;
+        transform: translateY(30px);
+        animation: fadeInUp 0.8s ease-out 0.2s forwards;
+    }
+    
+    .main-title {
+        font-weight: 300;
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        letter-spacing: -0.02em;
+        color: #3b82f6;
+    }
+    
+    .main-subtitle {
+        font-size: 1rem;
+        font-weight: 400;
+        color: #5a6c7d;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    
+    .content-section {
+        padding: 2rem 0;
+        background: #f5f5f5;
+        min-height: calc(100vh - 200px);
+    }
+    
+    .alert-danger {
+        background: #fff8e1;
+        border: 1px solid #ffcc02;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin: 1rem 0;
+        color: #f57c00;
+        font-weight: 500;
+        text-align: center;
+    }
+    
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .summary-card {
+        background: white;
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+        text-align: center;
+        transition: all 0.3s ease;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: fadeInUp 0.8s ease-out forwards;
+        position: relative;
+    }
+    
+    .summary-card:nth-child(1) { animation-delay: 0.2s; }
+    .summary-card:nth-child(2) { animation-delay: 0.3s; }
+    .summary-card:nth-child(3) { animation-delay: 0.4s; }
+    .summary-card:nth-child(4) { animation-delay: 0.5s; }
+    
+    .summary-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .summary-value {
+        font-size: 2rem;
+        font-weight: 300;
+        margin-bottom: 0.25rem;
+    }
+    
+    .summary-value.primary { color: #3b82f6; } 
+    .summary-value.success { color: #28a745; }    
+    .summary-value.info { color: #17a2b8; }
+    
+    .summary-label {
+        font-size: 0.8rem;
+        color: #64748b;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin: 0;
+    }
+    
+    .tooltip {
+        position: absolute;
+        background: #2c3e50;
+        color: white;
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.4rem;
+        font-size: 0.7rem;
+        font-weight: 400;
+        line-height: 1.3;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        z-index: 1000;
+        width: 260px;
+        text-align: left;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+        bottom: calc(100% + 8px);
+        left: 50%;
+        transform: translateX(-50%);
+    }
+    
+    .tooltip::after {
+        content: '';
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        border: 4px solid transparent;
+        border-top-color: #2c3e50;
+    }
+    
+    .summary-card:hover .tooltip {
+        opacity: 1;
+    }
+    
+    .classifications-section {
+        background: white;
+        border-radius: 0.75rem;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+        margin-bottom: 2rem;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: fadeInUp 0.8s ease-out 0.6s forwards;
+    }
+    
+    .section-header {
+        padding: 1.5rem 2rem 0.75rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .section-title {
+        font-size: 1.25rem;
+        font-weight: 500;
+        color: #2c3e50;
+        margin: 0;
+    }
+    
+    .classification-summary {
+        padding: 1.5rem 2rem;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 1rem;
+        text-align: center;
+    }
+    
+    .classification-item {
+        padding: 1rem 0.75rem;
+        border-radius: 0.5rem;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+    
+    .classification-item:hover {
+        transform: translateY(-2px);
+    }
+    
+    .classification-item.critical {
+        background: #ffebee;
+        border: 1px solid #ffcdd2;
+    }
+    
+    .classification-item.warning {
+        background: #fff8e1;
+        border: 1px solid #ffe0b2;
+    }
+    
+    .classification-item.info {
+        background: #e3f2fd;
+        border: 1px solid #bbdefb;
+    }
+    
+    .classification-item.primary {
+        background: #e8f4fd;
+        border: 1px solid #b3d9f2;
+    }
+    
+    .classification-item.success {
+        background: #e8f5e8;
+        border: 1px solid #c8e6c8;
+    }
+    
+    .classification-item.secondary {
+        background: #f5f5f5;
+        border: 1px solid #e0e0e0;
+    }
+    
+    .classification-count {
+        font-size: 1.5rem;
+        font-weight: 300;
+        margin-bottom: 0.25rem;
+    }
+    
+    .classification-count.text-danger { color: #d32f2f; }     
+    .classification-count.text-warning { color: #f57c00; }    
+    .classification-count.text-info { color: #17a2b8; }       
+    .classification-count.text-primary { color: #3b82f6; }   
+    .classification-count.text-success { color: #28a745; }    
+    .classification-count.text-secondary { color: #546e7a; }  
+    
+    .classification-label {
+        font-size: 0.7rem;
+        color: #64748b;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin: 0;
+    }
+    
+    .classification-item:hover .tooltip {
+        opacity: 1;
+    }
+    
+    .main-table-section {
+        background: white;
+        border-radius: 0.75rem;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+        opacity: 0;
+        transform: translateY(30px);
+        animation: fadeInUp 0.8s ease-out 0.8s forwards;
+    }
+    
+    .nav-tabs {
+        border: none;
+        padding: 0 2rem;
+        background: transparent;
+    }
+    
+    .nav-tabs .nav-link {
+        border: none;
+        padding: 0.75rem 1rem;
+        color: #64748b;
+        font-weight: 500;
+        font-size: 0.8rem;
+        transition: all 0.3s ease;
+        border-radius: 0;
+        border-bottom: 2px solid transparent;
+        background: transparent;
+    }
+    
+    .nav-tabs .nav-link:hover {
+        color: #3b82f6;
+        background: rgba(59, 130, 246, 0.05);
+        border-bottom-color: rgba(59, 130, 246, 0.3);
+    }
+    
+    .nav-tabs .nav-link.active {
+        color: #3b82f6;
+        background: rgba(59, 130, 246, 0.1);
+        border-bottom-color: #3b82f6;
+        font-weight: 600;
+    }
+    
+    .tab-content {
+        padding: 1.5rem 2rem;
+    }
+    
+    .table-responsive {
+        border-radius: 0.4rem;
+        overflow: auto;
+        box-shadow: 0 1px 6px rgba(0, 0, 0, 0.04);
+        max-height: 320px;
+    }
+    
+    .table {
+        margin: 0;
+        font-size: 0.8rem;
+    }
+    
+    .table thead th {
+        background: #f8fafc;
+        border: none;
+        padding: 0.75rem 0.75rem;
+        font-weight: 600;
+        color: #374151;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    
+    .table tbody td {
+        padding: 0.75rem;
+        border-top: 1px solid #e2e8f0;
+        color: #475569;
+        vertical-align: middle;
+        transition: all 0.2s ease;
+    }
+    
+    .table tbody tr:hover {
+        background: rgba(59, 130, 246, 0.02);
+    }
+    
+    .table tbody tr:hover td {
+        color: #2c3e50;
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .main-title {
+            font-size: 2rem;
+        }
+        
+        .summary-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+        
+        .classification-summary {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+        }
+        
+        .section-header,
+        .tab-content {
+            padding: 1rem;
+        }
+        
+        .nav-tabs {
+            padding: 0 1rem;
+        }
+        
+        .nav-tabs .nav-link {
+            padding: 0.5rem 0.5rem;
+            font-size: 0.7rem;
+        }
+    }
+</style>
+
+<div class="hero-section">
+    <div class="container">
+        <div class="hero-content">
+            <h1 class="main-title">Analysis Report</h1>
+            <p class="main-subtitle">Comprehensive material analysis and inventory insights</p>
+        </div>
+    </div>
+</div>
+
+<div class="content-section">
+    <div class="container">
+        {% if error %}
+            <div class="alert-danger">{{ error }}</div>
+        {% else %}
+            {% if report %}
+            <div class="summary-grid">
+                <div class="summary-card">
+                    <div class="summary-value primary">{{ report.summary.total_materials }}</div>
+                    <p class="summary-label">Total Materials</p>
+                    <div class="tooltip">
+                        Total unique materials analyzed across all inventory categories.
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-value success">{{ report.summary.date_range }}</div>
+                    <p class="summary-label">Analysis Period</p>
+                    <div class="tooltip">
+                        Date range of consumption data used for this analysis.
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-value success">{{ report.summary.inventory_efficiency_score }}%</div>
+                    <p class="summary-label">Inventory Efficiency Score</p>
+                    <div class="tooltip">
+                        Shows inventory optimization level. Low scores indicate inefficiency with excess costs and stockouts. Improve with better forecasting and ABC analysis.
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-value primary">{{ report.summary.cost_optimization_potential }}</div>
+                    <p class="summary-label">Cost Optimization Potential</p>
+                    <div class="tooltip">
+                        Materials that could benefit from better inventory strategies for potential cost savings.
+                    </div>
+                </div>
+            </div>
+
+            <div class="classifications-section">
+                <div class="section-header">
+                    <h5 class="section-title">Material Classifications Summary</h5>
+                </div>
+                <div class="classification-summary">
+                    <div class="classification-item critical">
+                        <div class="classification-count text-danger">{{ report.material_details.high_demand_critical|length }}</div>
+                        <p class="classification-label">HD Critical</p>
+                        <div class="tooltip">
+                            High consumption with stable patterns. Need tight control and reliable suppliers to prevent stockouts.
+                        </div>
+                    </div>
+                    <div class="classification-item warning">
+                        <div class="classification-count text-warning">{{ report.material_details.high_demand_variable|length }}</div>
+                        <p class="classification-label">HD Variable</p>
+                        <div class="tooltip">
+                            High consumption with unpredictable patterns. Require safety stock and flexible procurement.
+                        </div>
+                    </div>
+                    <div class="classification-item info">
+                        <div class="classification-count text-info">{{ report.material_details.medium_demand_regular|length }}</div>
+                        <p class="classification-label">MD Regular</p>
+                        <div class="tooltip">
+                            Moderate, consistent consumption. Standard reorder systems work well for these items.
+                        </div>
+                    </div>
+                    <div class="classification-item primary">
+                        <div class="classification-count text-primary">{{ report.material_details.medium_demand_seasonal|length }}</div>
+                        <p class="summary-label">MD Seasonal</p>
+                        <div class="tooltip">
+                            Moderate consumption that varies by season. Need seasonal forecasting and adjusted procurement schedules.
+                        </div>
+                    </div>
+                    <div class="classification-item success">
+                        <div class="classification-count text-success">{{ report.material_details.low_demand_stable|length }}</div>
+                        <p class="classification-label">LD Stable</p>
+                        <div class="tooltip">
+                            Low, consistent consumption. Can use simple periodic review systems with longer intervals.
+                        </div>
+                    </div>
+                    <div class="classification-item secondary">
+                        <div class="classification-count text-secondary">{{ report.material_details.low_demand_sporadic|length }}</div>
+                        <p class="classification-label">LD Sporadic</p>
+                        <div class="tooltip">
+                            Infrequent, unpredictable consumption. Consider better forecasting and evaluate necessity.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="main-table-section">
+                <div class="section-header">
+                    <ul class="nav nav-tabs" id="classificationTabs" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active" id="hd-critical-tab" data-bs-toggle="tab" href="#hd-critical" role="tab">HD Critical</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="hd-variable-tab" data-bs-toggle="tab" href="#hd-variable" role="tab">HD Variable</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="md-regular-tab" data-bs-toggle="tab" href="#md-regular" role="tab">MD Regular</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="md-seasonal-tab" data-bs-toggle="tab" href="#md-seasonal" role="tab">MD Seasonal</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="ld-stable-tab" data-bs-toggle="tab" href="#ld-stable" role="tab">LD Stable</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="ld-sporadic-tab" data-bs-toggle="tab" href="#ld-sporadic" role="tab">LD Sporadic</a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="tab-content" id="classificationTabContent">
+                    <div class="tab-pane fade show active" id="hd-critical" role="tabpanel">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>S.No.</th>
+                                        <th>Material</th>
+                                        <th>Description</th>
+                                        <th>Avg Monthly Consumption</th>
+                                        <th>Yearly Consumption</th>
+                                        <th>CV</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for material in report.material_details.high_demand_critical %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td>{{ material.material_number }}</td>
+                                        <td title="{{ material.description }}">{{ material.description[:40] }}{% if material.description|length > 40 %}...{% endif %}</td>
+                                        <td>{{ material.avg_consumption }}</td>
+                                        <td>{{ material.total_consumption }}</td>
+                                        <td>{{ material.coefficient_of_variation if material.coefficient_of_variation else 'N/A' }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-pane fade" id="hd-variable" role="tabpanel">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>S.No.</th>
+                                        <th>Material</th>
+                                        <th>Description</th>
+                                        <th>Avg Monthly Consumption</th>
+                                        <th>Yearly Consumption</th>
+                                        <th>CV</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for material in report.material_details.high_demand_variable %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td>{{ material.material_number }}</td>
+                                        <td title="{{ material.description }}">{{ material.description[:40] }}{% if material.description|length > 40 %}...{% endif %}</td>
+                                        <td>{{ material.avg_consumption }}</td>
+                                        <td>{{ material.total_consumption if material.total_consumption else 'N/A' }}</td>
+                                        <td>{{ material.coefficient_of_variation }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-pane fade" id="md-regular" role="tabpanel">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>S.No.</th>
+                                        <th>Material</th>
+                                        <th>Description</th>
+                                        <th>Avg Monthly Consumption</th>
+                                        <th>Yearly Consumption</th>
+                                        <th>CV</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for material in report.material_details.medium_demand_regular %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td>{{ material.material_number }}</td>
+                                        <td title="{{ material.description }}">{{ material.description[:40] }}{% if material.description|length > 40 %}...{% endif %}</td>
+                                        <td>{{ material.avg_consumption }}</td>
+                                        <td>{{ material.total_consumption if material.total_consumption else 'N/A' }}</td>
+                                        <td>{{ material.coefficient_of_variation if material.coefficient_of_variation else 'N/A' }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-pane fade" id="md-seasonal" role="tabpanel">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>S.No.</th>
+                                        <th>Material</th>
+                                        <th>Description</th>
+                                        <th>Avg Monthly Consumption</th>
+                                        <th>Yearly Consumption</th>
+                                        <th>CV</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for material in report.material_details.medium_demand_seasonal %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td>{{ material.material_number }}</td>
+                                        <td title="{{ material.description }}">{{ material.description[:40] }}{% if material.description|length > 40 %}...{% endif %}</td>
+                                        <td>{{ material.avg_consumption }}</td>
+                                        <td>{{ material.total_consumption if material.total_consumption else 'N/A' }}</td>
+                                        <td>{{ material.coefficient_of_variation }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-pane fade" id="ld-stable" role="tabpanel">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>S.No.</th>
+                                        <th>Material</th>
+                                        <th>Description</th>
+                                        <th>Avg Monthly Consumption</th>
+                                        <th>Yearly Consumption</th>
+                                        <th>CV</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for material in report.material_details.low_demand_stable %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td>{{ material.material_number }}</td>
+                                        <td title="{{ material.description }}">{{ material.description[:40] }}{% if material.description|length > 40 %}...{% endif %}</td>
+                                        <td>{{ material.avg_consumption }}</td>
+                                        <td>{{ material.total_consumption }}</td>
+                                        <td>{{ material.coefficient_of_variation if material.coefficient_of_variation else 'N/A' }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-pane fade" id="ld-sporadic" role="tabpanel">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>S.No.</th>
+                                        <th>Material</th>
+                                        <th>Description</th>
+                                        <th>Avg Monthly Consumption</th>
+                                        <th>Yearly Consumption</th>
+                                        <th>CV</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for material in report.material_details.low_demand_sporadic %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td>{{ material.material_number }}</td>
+                                        <td title="{{ material.description }}">{{ material.description[:40] }}{% if material.description|length > 40 %}...{% endif %}</td>
+                                        <td>{{ material.avg_consumption }}</td>
+                                        <td>{{ material.total_consumption if material.total_consumption else 'N/A' }}</td>
+                                        <td>{{ material.coefficient_of_variation }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

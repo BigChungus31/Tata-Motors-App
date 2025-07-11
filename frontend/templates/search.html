@@ -1,0 +1,461 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .search-container {
+        max-width: 800px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+    }
+    
+    .search-card {
+        background: white;
+        border-radius: 1rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        padding: 2rem;
+        margin-bottom: 2rem;
+        transition: all 0.3s ease;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: fadeInUp 0.8s ease-out 0.2s forwards;
+    }
+        
+    .search-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    }
+    
+    .search-title {
+        font-weight: 500;
+        color: #2c3e50;
+        margin-bottom: 1.5rem;
+        text-align: center;
+    }
+    
+    .search-input {
+        width: 100%;
+        padding: 1rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 0.5rem;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        margin-bottom: 1rem;
+    }
+    
+    .search-input:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+        outline: none;
+    }
+    
+    .search-results {
+        max-height: 400px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.5rem;
+        background: white;
+        display: none;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+    
+    .search-item {
+        padding: 1rem;
+        border-bottom: 1px solid #f1f5f9;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .search-item:hover {
+        background-color: #f8f9fa;
+        transform: translateX(5px);
+    }
+    
+    .search-item:last-child {
+        border-bottom: none;
+    }
+    
+    .item-code {
+        font-weight: 600;
+        color: #3b82f6;
+        font-size: 0.9rem;
+    }
+    
+    .item-description {
+        color: #64748b;
+        font-size: 0.85rem;
+        margin-top: 0.25rem;
+    }
+    
+    .selected-items {
+        margin-top: 2rem;
+    }
+    
+    .selected-item {
+        background: #f8f9fa;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: all 0.3s ease;
+    }
+    
+    .selected-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .item-details {
+        flex: 1;
+    }
+    
+    .quantity-controls {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-left: 1rem;
+    }
+    
+    .quantity-input {
+        width: 80px;
+        padding: 0.5rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.25rem;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+    
+    .quantity-input:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 0.1rem rgba(59, 130, 246, 0.25);
+        outline: none;
+    }
+    
+    .btn-quantity {
+        background: transparent;
+        color: #64748b;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.25rem;
+        width: 32px;
+        height: 32px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    .btn-quantity:hover {
+        color: #3b82f6;
+        border-color: #3b82f6;
+        transform: translateY(-1px);
+    }
+
+    .btn-remove {
+        background: #ef4444;
+        color: white;
+        border: none;
+        border-radius: 0.25rem;
+        width: 32px;
+        height: 32px;
+        cursor: pointer;
+        margin-left: 0.5rem;
+        transition: all 0.3s ease;
+        font-size: 0.875rem;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn-remove:hover {
+        background: #dc2626;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+    }
+    
+    .btn-add-to-cart {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        border: none;
+        border-radius: 0.5rem;
+        padding: 0.75rem 2rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 10px rgba(40, 167, 69, 0.3);
+        margin-top: 1rem;
+        width: 100%;
+    }
+    
+    .btn-add-to-cart:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+        background: linear-gradient(135deg, #20c997 0%, #17a2b8 100%);
+    }
+    
+    .btn-add-to-cart:disabled {
+        opacity: 0.6;
+        transform: none;
+        cursor: not-allowed;
+    }
+    
+    .no-results {
+        padding: 2rem;
+        text-align: center;
+        color: #64748b;
+    }
+    
+    .toast {
+        border: none;
+        border-radius: 0.75rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+
+<div class="search-container">
+    <div class="search-card">
+        <h2 class="search-title">Search for materials to add in cart</h2>
+        <div class="search-input-container">
+            <input type="text" class="search-input" id="searchInput" placeholder="Enter material number or description...">
+            <div class="search-results" id="searchResults"></div>
+        </div>
+    </div>
+    
+    <div class="selected-items" id="selectedItems" style="display: none;">
+        <div class="search-card">
+            <h3 class="search-title">Selected Items</h3>
+            <div id="selectedItemsList"></div>
+            <button class="btn-add-to-cart" id="addToCartBtn" disabled>Add to Cart</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast-container position-fixed top-0 end-0 p-3">
+    <div id="alertToast" class="toast" role="alert">
+        <div class="toast-header">
+            <strong class="me-auto">Material Search</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body" id="toastMessage"></div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    const searchResults = document.getElementById('searchResults');
+    const selectedItems = document.getElementById('selectedItems');
+    const selectedItemsList = document.getElementById('selectedItemsList');
+    const addToCartBtn = document.getElementById('addToCartBtn');
+    
+    let selectedMaterials = [];
+    let searchTimeout;
+    
+    searchInput.addEventListener('input', function() {
+        hideSearchResults();
+        clearTimeout(searchTimeout);
+        const query = this.value.trim();
+        
+        if (query.length < 2) {
+            hideSearchResults();
+            return;
+        }
+        
+        searchTimeout = setTimeout(() => {
+            performSearch(query);
+        }, 300);
+    });
+
+    function performSearch(query) {
+        if (!query || query.length < 2) {
+            hideSearchResults();
+            return;
+        }
+        
+        console.log('Searching for:', query);
+        
+        fetch('/search', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ query: query })
+        })
+        .then(response => {
+            console.log('Response status:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('Search response:', data);
+            if (data.success) {
+                window.currentSearchResults = data.materials; // Store for later use
+                const results = data.materials.map(material => ({
+                    code: material.material_number,
+                    description: material.description,
+                    unit_price: material.unit_price
+                }));
+                displaySearchResults(results);
+            }
+        })
+        .catch(error => {
+            console.error('Search error:', error);
+            displaySearchResults([]);
+        });
+    }
+    
+    function displaySearchResults(results) {
+        if (results.length === 0) {
+            searchResults.innerHTML = '<div class="no-results">No materials found</div>';
+        } else {
+            searchResults.innerHTML = results.map(material => `
+                <div class="search-item" data-code="${material.code}" data-description="${material.description}">
+                    <div class="item-code">${material.code}</div>
+                    <div class="item-description">${material.description}</div>
+                </div>
+            `).join('');
+            
+            // Add click listeners to search items
+            searchResults.querySelectorAll('.search-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const code = this.dataset.code;
+                    const description = this.dataset.description;
+                    addToSelected(code, description);
+                    hideSearchResults();
+                    searchInput.value = '';
+                });
+            });
+        }
+        
+        searchResults.style.display = 'block';
+    }
+    
+    function hideSearchResults() {
+        searchResults.style.display = 'none';
+    }
+    
+    function addToSelected(code, description) {
+        // Clear existing selections and add new one
+        selectedMaterials = [];
+        
+        // Find the material data from search results to get unit price
+        const materialData = window.currentSearchResults?.find(m => m.material_number === code);
+        const unitPrice = materialData?.unit_price || 0;
+
+        selectedMaterials.push({ 
+            code, 
+            description, 
+            quantity: 1, 
+            unit_price: unitPrice 
+        });
+        updateSelectedItemsDisplay();
+    }
+    
+    function updateSelectedItemsDisplay() {
+        if (selectedMaterials.length === 0) {
+            selectedItems.style.display = 'none';
+            addToCartBtn.disabled = true;
+            return;
+        }
+        
+        selectedItems.style.display = 'block';
+        addToCartBtn.disabled = false;
+        
+        selectedItemsList.innerHTML = selectedMaterials.map((item, index) => `
+            <div class="selected-item">
+                <div class="item-details">
+                    <div class="item-code">${item.code}</div>
+                    <div class="item-description">${item.description}</div>
+                </div>
+                <div class="quantity-controls">
+                    <button class="btn-quantity" onclick="changeQuantity(${index}, -1)">-</button>
+                    <input type="number" class="quantity-input" value="${item.quantity}" min="1" 
+                           onchange="updateQuantity(${index}, this.value)">
+                    <button class="btn-quantity" onclick="changeQuantity(${index}, 1)">+</button>
+                    <button class="btn-remove" onclick="removeItem(${index})">×</button>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    window.changeQuantity = function(index, change) {
+        const newQuantity = selectedMaterials[index].quantity + change;
+        if (newQuantity >= 1) {
+            selectedMaterials[index].quantity = newQuantity;
+            updateSelectedItemsDisplay();
+        }
+    };
+    
+    window.updateQuantity = function(index, value) {
+        const quantity = parseInt(value);
+        if (quantity >= 1) {
+            selectedMaterials[index].quantity = quantity;
+            updateSelectedItemsDisplay();
+        }
+    };
+    
+    window.removeItem = function(index) {
+        selectedMaterials.splice(index, 1);
+        updateSelectedItemsDisplay();
+        
+    };
+    
+    addToCartBtn.addEventListener('click', function() {
+        if (selectedMaterials.length === 0) return;
+        
+        // Add each selected material to cart
+        selectedMaterials.forEach(item => {
+            fetch('/add_to_cart', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    material_number: item.code,
+                    quantity: item.quantity,
+                    unit_price: item.unit_price || 0,
+                    description: item.description
+                })
+            });
+        });
+        
+        showToast('Items added to cart successfully', 'success');
+        selectedMaterials = [];
+        updateSelectedItemsDisplay();
+    });
+    
+    // Hide search results when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+            hideSearchResults();
+        }
+    });
+    
+    function showToast(message, type) {
+        const toast = document.getElementById('alertToast');
+        const toastMessage = document.getElementById('toastMessage');
+        toastMessage.textContent = message;
+        
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+    }
+});
+</script>
+
+{% endblock %}

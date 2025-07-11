@@ -1,0 +1,748 @@
+<!-- NEW Analysis.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .hero-section {
+        padding: 2rem 0 3rem;
+        background: white;
+        color: #2c3e50;
+        text-align: center;
+    }
+    
+    .hero-content {
+        opacity: 0;
+        transform: translateY(30px);
+        animation: fadeInUp 0.8s ease-out 0.2s forwards;
+    }
+    
+    .main-title {
+        font-weight: 300;
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        letter-spacing: -0.02em;
+        color: #3b82f6;
+    }
+    
+    .main-subtitle {
+        font-size: 1rem;
+        font-weight: 400;
+        color: #5a6c7d;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    
+    .content-section {
+        padding: 2rem 0;
+        background: #f5f5f5;
+        min-height: calc(100vh - 200px);
+    }
+    
+    .main-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
+    
+    .search-section {
+        background: white;
+        border-radius: 0.8rem;
+        padding: 1.5rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        opacity: 0;
+        transform: translateY(30px);
+        animation: fadeInUp 0.8s ease-out 0.4s forwards;
+    }
+    
+    .results-section {
+        background: white;
+        border-radius: 0.8rem;
+        padding: 1.5rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        opacity: 0;
+        transform: translateY(30px);
+        animation: fadeInUp 0.8s ease-out 0.6s forwards;
+        min-height: 300px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .section-title {
+        font-size: 1.25rem;
+        font-weight: 500;
+        color: #2c3e50;
+        margin-bottom: 1.5rem;
+    }
+    
+    .search-input {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.5rem;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        background: #f8fafc;
+        margin-bottom: 1rem;
+    }
+    
+    .search-input:focus {
+        outline: none;
+        border-color: #3b82f6;
+        background: white;
+        box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.1);
+    }
+    
+    .material-results {
+        display: none;
+        margin-top: 0.75rem;
+        max-height: 150px;
+        overflow-y: auto;
+    }
+    
+    .material-results::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .material-results::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 3px;
+    }
+    
+    .material-results::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 3px;
+    }
+    
+    .material-results::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+    }
+    
+    .material-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.5rem;
+        margin-bottom: 0.5rem;
+        background: #f8fafc;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+    
+    .material-item:hover {
+        border-color: #3b82f6;
+        background: white;
+    }
+    
+    .material-info h6 {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #2c3e50;
+        margin: 0 0 0.25rem 0;
+    }
+    
+    .material-info p {
+        font-size: 0.8rem;
+        color: #64748b;
+        margin: 0;
+    }
+    
+    .select-btn {
+        background: #3b82f6;
+        color: white;
+        border: none;
+        padding: 0.3rem 0.75rem;
+        border-radius: 0.4rem;
+        font-weight: 500;
+        font-size: 0.8rem;
+        transition: all 0.2s ease;
+    }
+    
+    .select-btn:hover {
+        background: #2563eb;
+    }
+    
+    .prediction-form {
+        margin-top: 1.5rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #e2e8f0;
+    }
+    
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 1rem;
+    }
+    
+    .form-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 0.5rem;
+    }
+    
+    .form-input {
+        padding: 0.75rem 1rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.5rem;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        background: #f8fafc;
+    }
+    
+    .form-input:focus {
+        outline: none;
+        border-color: #3b82f6;
+        background: white;
+        box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.1);
+    }
+    
+    .form-input:read-only {
+        background: #f1f5f9;
+        color: #64748b;
+        cursor: not-allowed;
+    }
+    
+    .predict-btn {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        border: none;
+        padding: 0.75rem 1.25rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        width: 100%;
+        box-shadow: 0 2px 10px rgba(40, 167, 69, 0.3);
+    }
+    
+    .predict-btn:hover {
+        background: linear-gradient(135deg, #20c997 0%, #17a2b8 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+    }
+    
+    .empty-state {
+        text-align: center;
+        color: #94a3b8;
+        font-size: 1rem;
+    }
+    
+    .prediction-content {
+        width: 100%;
+        text-align: center;
+    }
+    
+    .status-badge {
+        display: inline-block;
+        padding: 0.5rem 1.5rem;
+        border-radius: 2rem;
+        font-weight: 700;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-bottom: 1.5rem;
+    }
+    
+    .status-excess { background: #e3f2fd; color: #1976d2; }
+    .status-adequate { background: #e8f5e8; color: #2e7d32; }
+    .status-low { background: #fff8e1; color: #f57c00; }
+    .status-critical { background: #ffebee; color: #d32f2f; }
+    .status-no-consumption { background: #f5f5f5; color: #546e7a; }
+    .status-regular { background: #e8f4fd; color: #1565c0; }
+    .status-slow-moving { background: #fff3e0; color: #ef6c00; }
+    .status-infrequent { background: #fce4ec; color: #ad1457; }
+    .status-non-moving { background: #f5f5f5; color: #546e7a; }
+    
+    .metrics-display {
+        margin: 1.5rem 0;
+    }
+    
+    .metric-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .metric-row:last-child {
+        border-bottom: none;
+    }
+    
+    .metric-label {
+        font-size: 0.85rem;
+        color: #64748b;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    
+    .metric-value {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #2c3e50;
+    }
+    
+    .order-alert {
+        background: #fff8e1;
+        border: 1px solid #ffcc02;
+        border-radius: 0.75rem;
+        padding: 1rem;
+        margin: 1rem 0;
+        text-align: center;
+    }
+    
+    .order-alert strong {
+        color: #f57c00;
+        font-weight: 700;
+        font-size: 1rem;
+    }
+    
+    .recommendations {
+        background: #f0f8ff;
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        margin-top: 1.5rem;
+        text-align: left;
+    }
+    
+    .recommendations h6 {
+        color: #2563eb;
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+        font-size: 1rem;
+    }
+    
+    .recommendation-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .recommendation-item {
+        color: #475569;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+        padding-left: 1.5rem;
+        position: relative;
+        line-height: 1.4;
+    }
+    
+    .recommendation-item:before {
+        content: '•';
+        position: absolute;
+        left: 0;
+        font-weight: bold;
+        color: #3b82f6;
+    }
+    
+    .action-section {
+        text-align: center;
+        margin-top: 2rem;
+    }
+    
+    .view-report-btn {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+        border: none;
+        padding: 0.75rem 2rem;
+        border-radius: 0.5rem;
+        font-weight: 500;
+        font-size: 1rem;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 10px rgba(59, 130, 246, 0.3);
+    }
+    
+    .view-report-btn:hover {
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        color: white;
+        text-decoration: none;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+    }
+    
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.95);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+    }
+    
+    .spinner-border {
+        width: 2.5rem;
+        height: 2.5rem;
+        border-width: 0.3em;
+        color: #3b82f6;
+    }
+
+    .add-to-cart-section {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e2e8f0;
+        text-align: center;
+    }
+
+    .add-to-cart-btn {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 10px rgba(245, 158, 11, 0.3);
+    }
+
+    .add-to-cart-btn:hover {
+        background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+    }
+
+    .cart-popup {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #10b981;
+        color: white;
+        padding: 1rem 1.5rem;
+        border-radius: 0.5rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        z-index: 10000;
+        transform: translateX(100%);
+        transition: transform 0.3s ease;
+    }
+
+    .cart-popup.show {
+        transform: translateX(0);
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .main-title {
+            font-size: 2rem;
+        }
+        
+        .main-grid {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+        
+        .search-section,
+        .results-section {
+            padding: 1.25rem;
+        }
+    }
+</style>
+
+<div class="hero-section">
+    <div class="container">
+        <div class="hero-content">
+            <h1 class="main-title">Inventory Analysis</h1>
+            <p class="main-subtitle">Search materials and predict inventory requirements based on consumption patterns</p>
+        </div>
+    </div>
+</div>
+
+<div class="content-section">
+    <div class="container">
+        <div class="main-grid">
+            <div class="search-section">
+                <h2 class="section-title">Material Search</h2>
+                <input type="text" class="search-input" id="searchInput" placeholder="Search materials...">
+                
+                <div class="material-results" id="materialResults">
+                    <div id="searchResultsList"></div>
+                </div>
+                
+                <form id="predictionForm" class="prediction-form">
+                    <div class="form-group">
+                        <label class="form-label">Selected Material</label>
+                        <input type="text" class="form-input" id="selectedMaterial" readonly placeholder="No material selected">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Current Quantity</label>
+                        <input type="number" class="form-input" id="currentQty" required placeholder="Enter quantity">
+                    </div>
+                    <button type="submit" class="predict-btn" id="predictBtn">Predict Inventory</button>
+                </form>
+            </div>
+            
+            <div class="results-section" id="predictionResults">
+                <div class="empty-state">
+                    <p>Select a material and enter current quantity to get predictions</p>
+                </div>
+            </div>
+        </div>
+        
+        
+<div class="loading-overlay d-none" id="loadingSpinner">
+    <div class="spinner-border"></div>
+</div>
+
+<script>
+let searchTimeout;
+
+    document.getElementById('searchInput').addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        const query = this.value.trim();
+        const resultsContainer = document.getElementById('materialResults');
+        const resultsList = document.getElementById('searchResultsList');
+        
+        if (query.length < 2) {
+            resultsContainer.style.display = 'none';
+            return;
+        }
+        
+        searchTimeout = setTimeout(() => {
+            fetch('/search', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({query: query})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.materials && data.materials.length > 0) {
+                    resultsContainer.style.display = 'block';
+                    resultsList.innerHTML = '';
+                    data.materials.forEach(material => {
+                        const item = document.createElement('div');
+                        item.className = 'material-item';
+                        item.innerHTML = `
+                            <div class="material-info">
+                                <h6>${material.material_number}</h6>
+                                <p>${material.description}</p>
+                            </div>
+                            <button class="select-btn" onclick="selectMaterial('${material.material_number}', '${material.description}')">
+                                Select
+                            </button>
+                        `;
+                        resultsList.appendChild(item);
+                    });
+                } else {
+                    resultsContainer.style.display = 'none';
+                }
+            })
+            .catch(error => {
+                console.error('Search error:', error);
+                resultsContainer.style.display = 'none';
+            });
+        }, 300);
+    });
+
+    function selectMaterial(materialNumber, description) {
+        document.getElementById('selectedMaterial').value = `${materialNumber} - ${description}`;
+        document.getElementById('selectedMaterial').dataset.materialNumber = materialNumber;
+        document.getElementById('materialResults').style.display = 'none';
+        document.getElementById('searchInput').value = '';
+    }
+
+    document.getElementById('predictionForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const materialNumber = document.getElementById('selectedMaterial').dataset.materialNumber;
+        const currentQty = parseFloat(document.getElementById('currentQty').value);
+        
+        if (!materialNumber) {
+            alert('Please select a material first');
+            return;
+        }
+        
+        document.getElementById('loadingSpinner').classList.remove('d-none');
+        
+        fetch('/predict', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                material_number: materialNumber,
+                current_qty: currentQty
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('loadingSpinner').classList.add('d-none');
+            
+            if (data.success && data.prediction) {
+                displayPredictionResults(data.prediction);
+            } else {
+                document.getElementById('predictionResults').innerHTML = `
+                    <div class="order-alert">
+                        <strong>Error:</strong> ${data.error || 'Prediction failed'}
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            document.getElementById('loadingSpinner').classList.add('d-none');
+            console.error('Prediction error:', error);
+            document.getElementById('predictionResults').innerHTML = `
+                <div class="order-alert">
+                    <strong>Network Error:</strong> Please try again
+                </div>
+            `;
+        });
+    });
+
+    function displayPredictionResults(prediction) {
+        // Get quantity status class
+        const quantityStatusClass = {
+            'Excess': 'excess',
+            'Adequate': 'adequate', 
+            'Low': 'low',
+            'Critical': 'critical',
+            'No-Consumption': 'no-consumption'
+        }[prediction.quantity_status] || 'secondary';
+
+        // Get material type class
+        const materialTypeClass = {
+            'Regular': 'regular',
+            'Slow-Moving': 'slow-moving',
+            'Infrequent': 'infrequent',
+            'Non-Moving': 'non-moving'
+        }[prediction.material_type] || 'secondary';
+
+        const isLowConsumption = prediction.avg_monthly_consumption < 1;
+        const consumptionNote = isLowConsumption ? 
+            `<div class="metric-row">
+                <span class="metric-label">Usage Type</span>
+                <span class="metric-value">${prediction.avg_monthly_consumption < 0.5 ? 'Infrequent' : prediction.avg_monthly_consumption < 2 ? 'Slow-Moving' : 'Regular'}</span>
+            </div>` : '';
+        
+        const coverageDisplay = prediction.coverage_months === 'Unlimited' ? 
+            'Unlimited' : `${prediction.coverage_months} months`;
+        
+        const orderSection = prediction.order_quantity > 0 ? `
+            <div class="order-alert">
+                <strong>Order Required:</strong> ${prediction.order_quantity} units
+            </div>
+        ` : '';
+        
+        // Add cart button section
+        const cartSection = prediction.add_to_cart_eligible ? `
+            <div class="add-to-cart-section">
+                <button class="add-to-cart-btn" onclick="addToCart('${prediction.material_number}', ${prediction.order_quantity || 0}, ${prediction.unit_price || 0}, '${(prediction.description || '').replace(/'/g, '&apos;')}')">
+                    Add to Cart
+                </button>
+            </div>
+        ` : '';
+        
+        document.getElementById('predictionResults').innerHTML = `
+            <div class="prediction-content">
+                <div class="status-badge status-${quantityStatusClass}">${prediction.quantity_status}</div>
+                <div class="status-badge status-${materialTypeClass}" style="margin-left: 10px;">${prediction.material_type}</div>
+                
+                ${orderSection}
+                
+                <div class="metrics-display">
+                    <div class="metric-row">
+                        <span class="metric-label">Coverage</span>
+                        <span class="metric-value">${coverageDisplay}</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Monthly Average</span>
+                        <span class="metric-value">${prediction.avg_monthly_consumption}</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Variability</span>
+                        <span class="metric-value">${prediction.demand_variability}</span>
+                    </div>
+                    ${prediction.avg_monthly_consumption > 0 ? consumptionNote : ''}
+                    ${prediction.avg_monthly_consumption > 0 ? `
+                    <div class="metric-row">
+                        <span class="metric-label">Pattern</span>
+                        <span class="metric-value">${prediction.avg_monthly_consumption < 0.5 ? 'Infrequent' : prediction.avg_monthly_consumption < 2 ? 'Slow-Moving' : 'Regular'}</span>
+                    </div>` : ''}
+                </div>
+                
+                <div class="recommendations">
+                    <h6>Recommendations</h6>
+                    <ul class="recommendation-list">
+                        ${prediction.recommendations.map(rec => `<li class="recommendation-item">${rec}</li>`).join('')}
+                    </ul>
+                </div>
+                
+                ${cartSection}
+            </div>
+        `;
+    }
+
+    function addToCart(materialNumber, quantity, unitPrice) {
+        const selectedMaterial = document.getElementById('selectedMaterial').value;
+        const description = selectedMaterial.split(' - ')[1] || 'N/A';
+        
+        fetch('/add_to_cart', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                material_number: materialNumber,
+                quantity: quantity,
+                unit_price: unitPrice,
+                description: description
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showCartPopup('Material added to cart successfully!');
+            } else {
+                showCartPopup('Error adding to cart: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Cart error:', error);
+            showCartPopup('Network error. Please try again.');
+        });
+    }
+
+    function showCartPopup(message) {
+        // Remove existing popup if any
+        const existingPopup = document.querySelector('.cart-popup');
+        if (existingPopup) {
+            existingPopup.remove();
+        }
+        
+        // Create new popup
+        const popup = document.createElement('div');
+        popup.className = 'cart-popup';
+        popup.innerHTML = `
+            ${message}
+            <button onclick="this.parentElement.remove()" style="background: none; border: none; color: white; font-size: 18px; margin-left: 10px; cursor: pointer;">&times;</button>
+        `;
+        document.body.appendChild(popup);
+        
+        // Show popup
+        setTimeout(() => popup.classList.add('show'), 100);
+        
+        // Hide popup after 3 seconds
+        setTimeout(() => {
+            popup.classList.remove('show');
+            setTimeout(() => popup.remove(), 300);
+        }, 3000);
+    }
+    </script>
+    {% endblock %}
